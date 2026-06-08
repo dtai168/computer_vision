@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+
+reports/*.aux
+reports/*.bbl
+reports/*.blg
+reports/*.log
+reports/*.lof
+reports/*.lot
+reports/*.out
+reports/*.toc
+reports/*.xdv
+reports/main.pdf
+
+Run.txt
+ly_thuyet_on_tap_building_footprint.*

@@ -1,48 +1,113 @@
-# Trích xuất vùng tòa nhà từ ảnh chụp từ trên cao (Building Footprint Extraction)
+# Project 16 Final - Building Footprint Extraction
 
-Dự án này xây dựng một quy trình (pipeline) phân đoạn dấu chân công trình từ ảnh hàng không. Việc tự động hóa nhận diện vùng công trình nhằm mục đích hỗ trợ cập nhật bản đồ đô thị, ước lượng mật độ xây dựng và theo dõi biến động cho Hệ thống thông tin địa lý (GIS). 
+Workspace này là bản mở rộng cuối kỳ cho bài toán `Building Footprint Extraction from Aerial Images`.
 
-Bài toán được mô hình hóa dưới dạng phân đoạn nhị phân (binary segmentation) ở mức điểm ảnh, trong đó đầu vào là các patch ảnh RGB và đầu ra là mặt nạ (mask) phân định vùng công trình và nền.
+## Mục tiêu
 
-## 📊 Tập dữ liệu (Dataset)
-* **Nguồn dữ liệu:** Sử dụng bộ dữ liệu chuẩn **Inria Aerial Image Labeling Dataset** bao gồm ảnh RGB và mặt nạ nhị phân ground truth.
-* **Tiền xử lý:** Ảnh được chia theo tỷ lệ 70% huấn luyện (Train), 15% kiểm chứng (Validation) và 15% kiểm thử (Test) ở mức ảnh gốc để tránh rò rỉ dữ liệu.
-* **Kích thước đầu vào:** Dữ liệu được cắt thành các patch có kích thước 512x512 pixel.
-* **Tăng cường ảnh:** Áp dụng kỹ thuật CLAHE trên kênh sáng LAB để làm rõ biên và các vùng có độ tương phản thấp.
+So sánh 4 hướng phân đoạn vùng tòa nhà trên cùng một split dữ liệu:
 
-## 🧠 Các phương pháp tiếp cận
-Dự án triển khai và so sánh 4 phương pháp từ cổ điển đến học sâu trên cùng một điều kiện thực nghiệm:
-1.  **K-Means:** Phương pháp học không giám sát, phân cụm điểm ảnh dựa trên đặc trưng màu RGB và HSV (K=4).
-2.  **Otsu Thresholding:** Phương pháp phân ngưỡng tự động nhằm tối đa hóa phương sai giữa 2 lớp trên kênh độ bão hòa (Saturation).
-3.  **Linear SVM:** Mô hình học có giám sát, phân loại từng điểm ảnh dựa trên các vector đặc trưng thủ công bao gồm màu sắc, độ sáng, gradient Sobel và thống kê cục bộ.
-4.  **U-Net:** Mạng nơ-ron tích chập (CNN) với kiến trúc Encoder-Decoder kết hợp Skip Connections để học ngữ cảnh không gian và hình dạng công trình.
+- `K-Means`: baseline classical từ giữa kỳ.
+- `Otsu`: baseline thresholding từ giữa kỳ.
+- `Linear SVM`: supervised pixel-level baseline với handcrafted features.
+- `U-Net`: deep learning semantic segmentation model chạy trên Kaggle GPU.
 
-*Tất cả các phương pháp đều đi qua bước hậu xử lý hình thái học (Morphological Closing/Opening) và lọc thành phần liên thông để loại bỏ nhiễu.*
+## Cấu trúc
 
-## 🏆 Kết quả thực nghiệm
-Đánh giá định lượng trên 300 patch kiểm thử (Test set) cho thấy mô hình **U-Net** đạt hiệu suất vượt trội nhất trong các mô hình khảo sát:
+- `final_building_footprint_kaggle_single.ipynb`: notebook Kaggle khuyến nghị, tự chứa toàn bộ code và chỉ cần upload riêng file `.ipynb`.
+- `final_building_footprint.ipynb`: notebook cũ, dùng cơ chế tự tạo module từ source nhúng.
+- `src/building_footprint_final.py`: toàn bộ pipeline dùng lại được cho notebook hoặc CLI.
+- `reports/main.tex`: source báo cáo cuối kỳ, đọc bảng metrics thật từ `outputs/reports`.
+- `reports/report.pdf`: bản PDF báo cáo đã render.
+- `file_nop/`: bộ file nộp gồm notebook, báo cáo, slide PDF, readme và kịch bản thuyết trình.
+- `outputs/`: nơi notebook/script ghi metrics, figures, model và report snippets.
 
-| Phương pháp | IoU | Dice | Precision | Recall | F1-Score | Area Error (%) | Thời gian (s/patch) |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **K-Means** | 0.230 | 0.347 | 0.347 | 0.469 | 0.347 | 20.093 | 0.0828 |
-| **Otsu** | 0.223 | 0.333 | 0.233 | 0.802 | 0.333 | 64.691 | 0.0075 |
-| **SVM** | 0.295 | 0.416 | 0.315 | 0.774 | 0.416 | 34.436 | 0.0565 |
-| **U-Net** | **0.544** | **0.665** | **0.698** | 0.673 | **0.665** | **5.258** | 0.0396 |
+## Dataset
 
-*Bảng dữ liệu trích xuất từ Báo cáo*
+Dùng `Inria Aerial Image Labeling Dataset`, dạng thư mục:
 
-**Nhận xét:**
-* U-Net cải thiện rõ rệt mức độ chồng lấp không gian và giảm thiểu đáng kể sai số diện tích dự đoán (Area Error chỉ ở mức 5.258).
-* Các phương pháp truyền thống (K-Means, Otsu) rất nhanh nhưng gặp khó khăn lớn trong việc phân biệt mái nhà với đường hoặc sân bê tông do chỉ dựa vào đặc trưng màu sắc.
-* SVM tốt hơn nhóm baseline nhưng vẫn đưa ra nhiều dự đoán thừa (False Positives) do giới hạn của đặc trưng cục bộ và ranh giới tuyến tính.
-
-## 📂 Cấu trúc thư mục (Repository Structure)
 ```text
-computer_vision/
-│
-├── src/
-│   ├── data/                 # Thư mục chứa tập dữ liệu (ảnh RGB và mask)
-│   ├── model/                # Thư mục lưu trữ các checkpoint mô hình (ví dụ: U-Net weights)
-│   └── final-cv.ipynb        # Jupyter Notebook chứa toàn bộ mã nguồn: Tiền xử lý, Huấn luyện, Đánh giá
-│
-└── README.md                 # Tài liệu mô tả dự án (File này)
+AerialImageDataset/
+  train/
+    images/
+    gt/
+```
+
+Notebook tự tìm dataset ở các path Kaggle phổ biến. Nếu cần chỉ định tay, sửa:
+
+```python
+cfg = ExperimentConfig(dataset_root="/path/to/AerialImageDataset")
+```
+
+## Chạy trên Kaggle
+
+1. Tạo Kaggle Notebook và bật GPU.
+2. Attach dataset Inria Aerial Image Labeling.
+3. Upload/import `final_building_footprint_kaggle_single.ipynb`.
+4. Chạy từ trên xuống bằng `Run All`.
+
+Notebook `final_building_footprint_kaggle_single.ipynb` không cần upload thêm `.py`; phần implementation đã nằm trong các code cell thường của notebook.
+
+Output chính sau khi chạy:
+
+```text
+outputs/metrics/final_summary.csv
+outputs/metrics/per_patch_metrics.csv
+outputs/metrics/svm_tuning.csv
+outputs/metrics/unet_training_history.csv
+outputs/figures/method_comparison.png
+outputs/figures/qualitative_grid_*.png
+outputs/models/linear_svm_building_footprint.joblib
+outputs/models/unet_best.pth
+outputs/reports/final_metrics_table.tex
+```
+
+## Chạy nhanh bằng CLI
+
+Local smoke test không cần dataset:
+
+```powershell
+py -3 src\building_footprint_final.py --self-test
+```
+
+Debug nhanh khi có dataset:
+
+```powershell
+py -3 src\building_footprint_final.py --dataset-root D:\datasets\AerialImageDataset --quick --skip-unet
+```
+
+Full run trên môi trường có GPU:
+
+```powershell
+py -3 src\building_footprint_final.py --dataset-root D:\datasets\AerialImageDataset
+```
+
+## Chạy GUI app
+
+GUI dùng `Streamlit` để demo inference trên ảnh mới. Ứng dụng không retrain model; nó load lại artifact đã có trong `outputs/models` và threshold đã chọn trong `outputs/metrics/unet_selected_threshold.json`.
+
+Cài dependency chính và dependency GUI:
+
+```powershell
+py -3 -m pip install -r requirements.txt
+py -3 -m pip install -r requirements-gui.txt
+```
+
+Chạy app:
+
+```powershell
+py -3 -m streamlit run app\streamlit_app.py
+```
+
+Trong app có thể upload ảnh aerial `.png`, `.jpg`, `.jpeg`, `.tif`, `.tiff`, chọn `K-Means`, `Otsu`, `SVM`, hoặc `U-Net`, rồi xem mask dự đoán, overlay và các thống kê cơ bản. Nếu upload thêm ground-truth mask, app sẽ hiển thị IoU, Dice/F1, Precision, Recall, count error, area error và error overlay theo quy ước green=TP, red=FP, blue=FN.
+
+Đường chạy notebook/CLI phía trên vẫn là phần full training/evaluation của đề tài. GUI chỉ là ứng dụng trọn gói để trình diễn mô hình đã train.
+
+## Ghi chú báo cáo
+
+Không nhập tay số liệu vào báo cáo. Sau khi chạy notebook, dùng số từ:
+
+- `outputs/metrics/final_summary.csv`
+- `outputs/reports/final_metrics_table.tex`
+- `outputs/reports/final_metrics_summary.tex`
+
+Báo cáo cần tập trung vào ứng dụng geospatial: segmentation overlay, building count, area ratio, lỗi do shadow, roof color, small roofs, road/parking confusion và false merge.

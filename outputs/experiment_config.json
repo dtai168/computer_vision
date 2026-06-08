@@ -1,0 +1,58 @@
+{
+  "random_seed": 42,
+  "patch_size": 512,
+  "patch_stride": 512,
+  "train_ratio": 0.7,
+  "val_ratio": 0.15,
+  "test_ratio": 0.15,
+  "max_train_patches": 1200,
+  "max_val_patches": 300,
+  "max_test_patches": 300,
+  "kmeans_clusters": 4,
+  "kmeans_iter": 10,
+  "kmeans_eps": 1.0,
+  "clahe_clip_limit": 2.0,
+  "clahe_tile_grid": [
+    8,
+    8
+  ],
+  "otsu_clahe_clip_limit": 1.5,
+  "morph_close_ksize": 9,
+  "morph_open_ksize": 5,
+  "min_building_area": 200,
+  "pixels_per_train_patch": 1200,
+  "max_train_pixels": 200000,
+  "svm_c_grid": [
+    0.1,
+    0.5,
+    1.0
+  ],
+  "svm_max_iter": 5000,
+  "max_svm_val_patches_for_tuning": 120,
+  "unet_epochs": 20,
+  "unet_batch_size": 4,
+  "unet_learning_rate": 0.001,
+  "unet_weight_decay": 0.0001,
+  "unet_patience": 5,
+  "unet_num_workers": 2,
+  "unet_threshold_grid": [
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7
+  ],
+  "max_unet_val_patches_for_threshold": 120,
+  "unet_apply_morphology": true,
+  "qualitative_examples": 8,
+  "output_dir": "/kaggle/working/outputs",
+  "dataset_root": null,
+  "candidate_base_dirs": [
+    "/kaggle/input/datasets/sagar100rathod/inria-aerial-image-labeling-dataset/AerialImageDataset",
+    "/kaggle/input/inria-aerial-image-labeling-dataset/AerialImageDataset",
+    "/kaggle/input/inria-aerial-image-labeling/AerialImageDataset",
+    "/kaggle/input/aerial-image-dataset/AerialImageDataset",
+    "D:/datasets/AerialImageDataset",
+    "G:/AerialImageDataset"
+  ]
+}
